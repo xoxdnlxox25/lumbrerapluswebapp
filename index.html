@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lumbrera Plus - Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --primary: #f59e0b;
+            --bg-main: #0a0a0c;
+            --bg-card: #16161a;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-main);
+            color: #f8fafc;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Glassmorphism Navigation */
+        .glass-nav {
+            background: rgba(10, 10, 12, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Sidebar Transitions */
+        .sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(180deg, #16161a 0%, #0a0a0c 100%);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 60;
+        }
+
+        .sidebar.closed {
+            transform: translateX(-100%);
+        }
+
+        /* Premium Card Effects */
+        .premium-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .premium-card:active {
+            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        /* Animations */
+        .animate-view {
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Scrollbar hide */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <div id="loadingScreen" class="fixed inset-0 z-[110] bg-[#0a0a0c] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="relative w-20 h-20 mb-6">
+            <div class="absolute inset-0 rounded-full border-2 border-amber-500/20"></div>
+            <div class="absolute inset-0 rounded-full border-t-2 border-amber-500 animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <i class="fas fa-dove text-2xl text-amber-500"></i>
+            </div>
+        </div>
+        <h2 class="text-lg font-bold tracking-widest uppercase">Lumbrera <span class="text-amber-500 font-light">Plus</span></h2>
+        <p id="loadingMsg" class="text-[10px] mt-4 opacity-40 uppercase tracking-widest">Conectando con el servidor...</p>
+        <button id="retryBtn" onclick="cargarDatos()" class="hidden mt-6 px-6 py-2 bg-amber-500/10 text-amber-500 rounded-full text-xs font-bold border border-amber-500/20">REINTENTAR</button>
+    </div>
+
+    <header class="sticky top-0 h-16 flex justify-between items-center px-6 glass-nav z-40 safe-area-top">
+        <button id="menuBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 transition active:scale-90">
+            <i class="fa-solid fa-bars-staggered text-lg text-amber-500"></i>
+        </button>
+        <div class="text-center">
+            <p class="text-[9px] font-bold opacity-30 tracking-[0.2em] uppercase">Ministerio El Viene</p>
+            <h1 id="viewTitle" class="text-xs font-extrabold uppercase tracking-[0.15em] text-amber-50">Inicio</h1>
+        </div>
+        <div class="w-10 h-10 flex items-center justify-center">
+            <div id="statusIndicator" class="w-2 h-2 bg-amber-500 rounded-full animate-pulse shadow-[0_0_10px_#f59e0b]"></div>
+        </div>
+    </header>
+
+    <nav id="sidebar" class="fixed top-0 left-0 h-full w-80 sidebar closed p-8 flex flex-col shadow-2xl">
+        <div class="flex items-center justify-between mb-10">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+                    <i class="fas fa-dove text-black"></i>
+                </div>
+                <h2 class="font-extrabold text-lg tracking-tight">LUMBRERA</h2>
+            </div>
+            <button onclick="closeMenu()" class="w-8 h-8 flex items-center justify-center opacity-50 hover:opacity-100 transition"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="space-y-2 flex-1 overflow-y-auto no-scrollbar">
+            <button onclick="showView('inicio')" class="w-full flex items-center space-x-4 p-4 rounded-2xl hover:bg-white/5 transition group text-left active:scale-95">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500 transition">
+                    <i class="fas fa-home text-amber-500 group-hover:text-black"></i>
+                </div>
+                <span class="font-semibold text-sm">Inicio</span>
+            </button>
+            
+            <button onclick="showView('estudios')" class="w-full flex items-center space-x-4 p-4 rounded-2xl hover:bg-white/5 transition group text-left active:scale-95">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500 transition">
+                    <i class="fas fa-book-open text-amber-500 group-hover:text-black"></i>
+                </div>
+                <span class="font-semibold text-sm">Estudios Bíblicos</span>
+            </button>
+
+            <button onclick="showView('respuestas')" class="w-full flex items-center space-x-4 p-4 rounded-2xl hover:bg-white/5 transition group text-left active:scale-95">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500 transition">
+                    <i class="fas fa-certificate text-amber-500 group-hover:text-black"></i>
+                </div>
+                <span class="font-semibold text-sm">Respuestas</span>
+            </button>
+        </div>
+        
+        <div class="pt-6 border-t border-white/5 text-center">
+             <p class="text-[9px] opacity-20">v2.0 Premium Build</p>
+        </div>
+    </nav>
+
+    <div id="overlay" class="fixed inset-0 bg-black/80 hidden z-50 backdrop-blur-sm transition-opacity" onclick="closeMenu()"></div>
+
+    <main class="flex-1 p-6 max-w-lg mx-auto w-full pb-20">
+        
+        <section id="view-inicio" class="view animate-view space-y-8">
+            <div class="py-6">
+                <h3 class="text-4xl font-extrabold leading-tight">Escoge un <br><span class="text-amber-500 text-3xl font-light">Recurso</span></h3>
+            </div>
+            <div class="grid gap-4">
+                <button onclick="showView('estudios')" class="premium-card p-6 rounded-3xl flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500">
+                        <i class="fas fa-bible text-xl"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="block font-bold text-lg">Ver Estudios</span>
+                        <p class="text-[10px] opacity-50">Accede a las series de estudio</p>
+                    </div>
+                </button>
+                <button onclick="showView('respuestas')" class="premium-card p-6 rounded-3xl flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400">
+                        <i class="fas fa-search text-xl"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="block font-bold text-lg">Buscar Respuestas</span>
+                        <p class="text-[10px] opacity-50">Consulta tus notas</p>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <section id="view-estudios" class="view hidden animate-view space-y-6">
+            <div class="py-2">
+                <h3 class="text-2xl font-bold">Series de Estudio</h3>
+                <p class="text-[10px] opacity-40 uppercase tracking-widest mt-1">Biblioteca Digital</p>
+            </div>
+            <div id="seriesContainer" class="grid gap-4">
+                <div class="premium-card p-6 rounded-3xl h-24 animate-pulse bg-white/5"></div>
+                <div class="premium-card p-6 rounded-3xl h-24 animate-pulse bg-white/5"></div>
+            </div>
+        </section>
+
+        <section id="view-temas" class="view hidden animate-view space-y-6">
+            <div class="flex items-center space-x-4 py-4 sticky top-16 z-30 bg-[#0a0a0c]/90 backdrop-blur-sm -mx-6 px-6 border-b border-white/5">
+                <button onclick="goBack()" class="w-10 h-10 rounded-full back-btn flex items-center justify-center text-amber-500 active:scale-90 transition">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="overflow-hidden">
+                    <h3 id="currentSerieTitle" class="text-lg font-bold leading-none truncate pr-4">Título Serie</h3>
+                    <p class="text-[9px] opacity-40 uppercase tracking-[0.2em] mt-1">Temas disponibles</p>
+                </div>
+            </div>
+            <div id="temasList" class="space-y-3 pb-6">
+                </div>
+        </section>
+
+        <section id="view-respuestas" class="view hidden animate-view text-center py-20 opacity-30">
+            <i class="fas fa-search text-5xl mb-4"></i>
+            <h3 class="font-bold">Próximamente</h3>
+            <p class="text-xs">El módulo de búsqueda está en construcción</p>
+        </section>
+    </main>
+
+    <div id="modal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center p-6 opacity-0 transition-opacity duration-300">
+        <div class="bg-[#16161a] w-full max-w-xs rounded-[2.5rem] p-8 border border-white/5 shadow-2xl text-center space-y-6 transform scale-95 transition-transform duration-300" id="modalContent">
+            <div class="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
+                <i class="fas fa-file-alt text-2xl"></i>
+            </div>
+            <div>
+                <h3 id="modalTitle" class="text-lg font-bold leading-tight"></h3>
+                <p id="modalViews" class="text-[10px] text-amber-500/80 mt-2 uppercase tracking-widest font-bold"></p>
+            </div>
+            <div class="space-y-3 pt-2">
+                <button id="btnAbrir" class="w-full p-4 bg-amber-500 text-black font-bold rounded-2xl active:scale-95 transition shadow-lg shadow-amber-500/20">
+                    ABRIR ESTUDIO
+                </button>
+                <button id="btnCompartir" class="w-full p-4 bg-gray-800 text-white font-bold rounded-2xl active:scale-95 transition flex items-center justify-center space-x-2 border border-white/5 hover:bg-gray-700">
+                    <i class="fab fa-whatsapp text-green-400"></i> <span>COMPARTIR</span>
+                </button>
+                <button onclick="cerrarModal()" class="w-full p-3 text-xs opacity-50 uppercase tracking-wider font-bold mt-2">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN
+        const API_URL = "https://script.google.com/macros/s/AKfycbzfilvTWCGmObhXLg4Gj4pt7fL8gNVUHAvqjOPY8-GZUA_R1cecxRxzS5RyJVjwgfzSCA/exec";
+        
+        // ESTADO GLOBAL
+        let dataEstudios = [];
+        let agrupadoPorSerie = {};
+        let currentLink = "";
+        let currentRow = 0;
+        let previousView = "inicio";
+
+        // INICIALIZACIÓN
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarDatos();
+            
+            // Manejo del historial del navegador (Back button support)
+            window.addEventListener('popstate', (event) => {
+                if (event.state && event.state.view) {
+                    _renderView(event.state.view);
+                } else {
+                    _renderView('inicio');
+                }
+            });
+        });
+
+        // 1. DATA FETCHING
+        async function cargarDatos(){
+            const loadingScreen = document.getElementById('loadingScreen');
+            const loadingMsg = document.getElementById('loadingMsg');
+            const retryBtn = document.getElementById('retryBtn');
+
+            loadingMsg.innerText = "Sincronizando biblioteca...";
+            retryBtn.classList.add('hidden');
+
+            try {
+                const r = await fetch(API_URL);
+                if (!r.ok) throw new Error("Error de conexión");
+                dataEstudios = await r.json();
+                
+                // Agrupar datos
+                agrupadoPorSerie = dataEstudios.reduce((acc, item) => {
+                    const serieName = item.serie || "Varios";
+                    if(!acc[serieName]) acc[serieName] = [];
+                    acc[serieName].push(item);
+                    return acc;
+                }, {});
+
+                // Ocultar carga con fade
+                loadingScreen.style.opacity = '0';
+                setTimeout(() => { loadingScreen.style.display = 'none'; }, 500);
+                
+                renderSeries(); // Pre-renderizar
+                
+            } catch(err) {
+                console.error(err);
+                loadingMsg.innerText = "Error de conexión. Verifica tu internet.";
+                loadingMsg.classList.add('text-red-500');
+                retryBtn.classList.remove('hidden');
+            }
+        }
+
+        // 2. NAVEGACIÓN (SPA)
+        function showView(viewId) {
+            // Guardar historial para botón físico "Atrás"
+            if (viewId !== 'inicio') {
+                history.pushState({ view: viewId }, null, "");
+            }
+            previousView = document.querySelector('.view:not(.hidden)').id.replace('view-', '');
+            _renderView(viewId);
+        }
+
+        function goBack() {
+            // Si hay historial, usamos back, si no, forzamos inicio
+            if (history.state) {
+                history.back();
+            } else {
+                showView('estudios');
+            }
+        }
+
+        function _renderView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+            
+            const target = document.getElementById('view-' + viewId);
+            if(target) {
+                target.classList.remove('hidden');
+                // Reiniciar animación
+                target.classList.remove('animate-view');
+                void target.offsetWidth; // trigger reflow
+                target.classList.add('animate-view');
+            }
+            
+            // Actualizar Header
+            const titles = {
+                inicio: 'Inicio', 
+                estudios: 'Estudios', 
+                respuestas: 'Respuestas', 
+                temas: 'Temario'
+            };
+            document.getElementById('viewTitle').innerText = titles[viewId] || "Lumbrera";
+            
+            closeMenu();
+            window.scrollTo(0,0);
+        }
+
+        // 3. RENDERIZADO DE SERIES
+        function renderSeries() {
+            const container = document.getElementById("seriesContainer");
+            container.innerHTML = "";
+
+            const series = Object.keys(agrupadoPorSerie);
+            
+            if (series.length === 0) {
+                container.innerHTML = `<p class="text-center opacity-30 py-10">No hay series disponibles.</p>`;
+                return;
+            }
+
+            series.forEach(serie => {
+                const numTemas = agrupadoPorSerie[serie].length;
+                const card = document.createElement("button");
+                card.className = "premium-card p-6 rounded-3xl flex items-center justify-between group w-full";
+                card.onclick = () => {
+                    renderTemasDeSerie(serie);
+                    showView('temas');
+                };
+                card.innerHTML = `
+                    <div class="flex items-center space-x-4 text-left">
+                        <div class="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-black transition-colors duration-300">
+                            <i class="fas fa-folder-open text-xl"></i>
+                        </div>
+                        <div>
+                            <span class="block font-bold text-slate-100 text-lg">${serie}</span>
+                            <p class="text-[10px] opacity-40 uppercase tracking-widest font-semibold">${numTemas} TEMAS</p>
+                        </div>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                        <i class="fas fa-chevron-right text-amber-500/50 group-hover:text-amber-500 text-xs"></i>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 4. RENDERIZADO DE TEMAS
+        function renderTemasDeSerie(serieName) {
+            const container = document.getElementById("temasList");
+            const titleEl = document.getElementById("currentSerieTitle");
+            
+            container.innerHTML = "";
+            titleEl.innerText = serieName;
+
+            if (!agrupadoPorSerie[serieName]) return;
+
+            // Ordenar por campo 'orden' si existe, sino por defecto
+            const temas = agrupadoPorSerie[serieName].sort((a,b) => {
+                return (Number(a.orden) || 999) - (Number(b.orden) || 999);
+            });
+
+            temas.forEach(e => {
+                const btn = document.createElement("button");
+                btn.className = "w-full premium-card p-5 rounded-2xl flex items-center justify-between active:scale-[0.98] transition-transform";
+                btn.onclick = () => abrirModal(e.titulo, e.enlace, e.rowIndex, e.vistas);
+                
+                btn.innerHTML = `
+                    <div class="flex items-center space-x-4 text-left w-full overflow-hidden">
+                        <div class="w-10 h-10 flex-shrink-0 rounded-full bg-gradient-to-br from-white/5 to-white/0 flex items-center justify-center text-sm font-black text-amber-500 border border-white/5 shadow-inner">
+                            ${e.orden || "#"}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <span class="font-bold text-sm text-slate-200 block truncate leading-tight mb-1">${e.titulo}</span>
+                            <span class="text-[9px] text-amber-500/60 font-bold uppercase tracking-wider bg-amber-500/5 px-2 py-0.5 rounded-md" id="vistas-${e.rowIndex}">
+                                <i class="fas fa-eye mr-1"></i>${e.vistas || 0}
+                            </span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        // 5. MODAL LOGIC
+        function abrirModal(titulo, enlace, rowIndex, vistas) {
+            currentLink = enlace;
+            currentRow = rowIndex;
+            const nuevasVistas = (Number(vistas) || 0) + 1;
+            
+            document.getElementById("modalTitle").innerText = titulo;
+            document.getElementById("modalViews").innerText = `${nuevasVistas} VISTAS TOTALES`;
+            
+            const modal = document.getElementById("modal");
+            const modalContent = document.getElementById("modalContent");
+            
+            modal.classList.remove("hidden");
+            // Doble requestAnimationFrame para animación CSS suave
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    modal.classList.remove("opacity-0");
+                    modalContent.classList.remove("scale-95");
+                });
+            });
+
+            // Optimistic Update (Actualiza UI antes de servidor)
+            const vistaElemento = document.getElementById("vistas-" + rowIndex);
+            if(vistaElemento) vistaElemento.innerHTML = `<i class="fas fa-eye mr-1"></i>${nuevasVistas}`;
+            
+            // Actualizar objeto local
+            const item = dataEstudios.find(d => d.rowIndex === rowIndex);
+            if(item) item.vistas = nuevasVistas;
+
+            // Enviar update silencioso al servidor
+            fetch(API_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rowIndex: rowIndex })
+            }).catch(e => console.log("Error actualizando vista en server (no crítico)"));
+        }
+
+        function cerrarModal() {
+            const modal = document.getElementById("modal");
+            const modalContent = document.getElementById("modalContent");
+            
+            modal.classList.add("opacity-0");
+            modalContent.classList.add("scale-95");
+            
+            setTimeout(() => {
+                modal.classList.add("hidden");
+            }, 300);
+        }
+
+        // Action Buttons
+        document.getElementById("btnAbrir").onclick = () => { 
+            if (currentLink) window.open(currentLink, "_blank"); 
+        };
+        
+        document.getElementById("btnCompartir").onclick = () => {
+            if (currentLink) {
+                const text = `Te comparto este estudio bíblico: *${document.getElementById("modalTitle").innerText}*\n${currentLink}`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+            }
+        };
+
+        // UI Helpers
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        menuBtn.onclick = () => { 
+            sidebar.classList.remove('closed'); 
+            overlay.classList.remove('hidden'); 
+        };
+        
+        function closeMenu() { 
+            sidebar.classList.add('closed'); 
+            overlay.classList.add('hidden'); 
+        }
+    </script>
+</body>
+</html>
